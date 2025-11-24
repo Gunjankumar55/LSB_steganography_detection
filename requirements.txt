@@ -1,0 +1,6 @@
+flask
+torch
+numpy
+scipy
+pillow
+scikit-learn

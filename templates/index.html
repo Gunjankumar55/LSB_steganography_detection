@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-Payload LSB Steganalysis Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Inter:600,700&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(120deg,#090e1a 0%,#1e293b 75%,#64748b 100%);
+      font-family: 'Inter', Arial, sans-serif;
+      margin:0;padding:0;
+      overflow-x: hidden;
+    }
+    .main-card {
+      background: rgba(255,255,255,0.92);
+      border-radius: 2rem;
+      box-shadow: 0 12px 40px rgba(20,32,64,0.21);
+      margin: 2.2rem auto;
+      max-width: 790px;
+      width: 98vw;
+      padding: 2.7rem 2.2rem 2.7rem 2.2rem;
+      transition: box-shadow 0.18s;
+      position: relative;
+      backdrop-filter: blur(2px);
+    }
+    .header-title {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: #2563eb;
+      text-align: center;
+      letter-spacing: .016em;
+      margin-bottom: 0.18em;
+      text-shadow: 0 3px 12px #64748b26;
+    }
+    .header-desc {
+      text-align: center;
+      color: #334155;
+      font-size: 1.22rem;
+      font-weight: 600;
+      margin-bottom: 1.5em;
+      letter-spacing: 0.07em;
+    }
+    /* Glass info panel */
+    .info-glass {
+      background: rgba(229,240,255,0.82);
+      border-radius: 1.1rem;
+      box-shadow: 0 2px 18px #0797c522, 0 0.5px 3.5px #ffd70033;
+      padding: 1.3em 1.3em 0.9em 1.3em;
+      margin-bottom: 1.45em;
+    }
+    .info-title { color: #2563eb; font-size: 1.12em; font-weight: 700; margin-bottom: 0.7em;}
+    .info-snip { color: #23304f; font-size: 0.97em; margin-bottom: 0.3em;}
+    .info-payloads td, .info-payloads th {padding: 0.26em .8em;}
+    .info-collapsible { cursor: pointer; font-size: 1.07rem; color: #334155; background:none;border:none;font-weight:700;}
+    .info-collapsible:after {content: "▼";font-size:.9em;margin-left:.5em;}
+    .info-collapsible.collapsed:after {content:"►";}
+    .info-content {display:block;transition: max-height .3s cubic-bezier(.32,1.8,.75,1);}
+    .info-content.collapsed {display:none;}
+    .dropzone { border: 3px dashed #2563eb; border-radius: 1.2rem; text-align: center; background: #f5faff; padding: 2.3rem 1.1rem; cursor: pointer; transition: border-color 0.22s, background 0.2s, box-shadow .21s;}
+    .dropzone:hover { background: #dbeafe; border-color: #3b82f6; box-shadow: 0 3px 26px #2563eb33; }
+    .preview-img { max-width: 250px; border-radius: 1rem; margin-top: 1rem; box-shadow: 0 0 16px #3b82f655; background: #fff;}
+    .result-badge { font-size: 1.2em; font-weight: 800; padding: 0.45em 1.6em; border-radius: 2em; letter-spacing: 0.03em; display:inline-block; margin-bottom:0.3em; box-shadow: 0 3px 10px #0002;}
+    .prob-bar-wrap { display: flex; align-items: center; gap:0.45em; margin-bottom: 0.6em;}
+    .prob-bar-label { width:80px; font-weight:700; font-size:1.09em; color:#222b3a; letter-spacing:.01em; text-transform:uppercase; text-align:right;}
+    .prob-bar { flex: 1; height: 29px; border-radius: 1em; background: #e0e7ef; overflow: hidden; position:relative; margin-right:6px;}
+    .prob-bar-inner { height:100%;display:flex;align-items:center; font-weight:700;color:#fff;font-size:1.17em;padding-left:1em; border-radius:1em;transition:width 0.55s cubic-bezier(.32,1.2,.69,1);}
+    .prob-bar-value { min-width:52px;text-align:right;font-weight:600;font-size:1.05em;margin-left:4px; color:#1e293b;}
+    .icon-big { font-size: 2.2em; vertical-align: sub; margin-right: 0.23em;}
+    .icon-clean { color: #1dd8a2;}
+    .icon-stego { color: #ef4444;}
+    /* Subtle watermark background icon */
+    .bg-watermark {
+      position: absolute; bottom: 14px; right: 18px; z-index:0; opacity:.12; font-size:5.5em; pointer-events:none;
+    }
+    @media(max-width: 900px){ .main-card{ max-width:99vw; padding:1.3rem}}
+    @media(max-width: 520px){ .prob-bar-label{width:54px;font-size:0.99em}}
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="main-card">
+    <!-- Watermark icon -->
+    <div class="bg-watermark"><span class="icon-big icon-stego">🔒</span></div>
+    <!-- Header section -->
+    <div class="header-title">Multi-Payload LSB Steganalysis Demo</div>
+    <div class="header-desc">
+      Analyze PNG images for hidden data using advanced<br>Least Significant Bit detection and AI.<br>
+      Upload an image and instantly detect steganographic payloads!
+    </div>
+    <!-- Info section -->
+    <div class="info-glass mb-4">
+      <button class="info-collapsible" onclick="toggleInfo()">About & Knowledge  </button>
+      <div id="infoPanel" class="info-content collapsed">
+        <div class="info-title">What is Steganography?</div>
+        <div class="info-snip">Steganography is the science of hiding information within digital media so it is invisible to regular inspection. Images, audio, and video files are common carriers.</div>
+        <div class="info-title mt-2">What are LSBs and Payloads?</div>
+        <div class="info-snip">LSB (Least Significant Bit) steganography modifies the lowest-value bits in an image (usually the last 1 or 2 of each pixel) to embed secret data called the payload.</div>
+        <div class="info-title mt-2">What Payload Types Are Detected?</div>
+        <table class="info-payloads mb-1 small">
+          <tr><th>Payload</th><th>Meaning</th></tr>
+          <tr><td>HTML</td><td>Hidden HTML code</td></tr>
+          <tr><td>JS</td><td>Hidden JavaScript code</td></tr>
+          <tr><td>PS</td><td>Hidden Powershell script</td></tr>
+          <tr><td>Clean</td><td>No payload / genuine image</td></tr>
+        </table>
+        <div class="info-title mt-2">How does the model decide?</div>
+        <div class="info-snip mb-2">The neural network analyzes subtle changes in the 2 least significant bits of every image pixel, plus additional statistics, to predict if a payload is present and its type. Confidence is shown for each class.</div>
+      </div>
+    </div>
+    <!-- Upload & results UI -->
+    <div class="dropzone" id="dropzone">
+      <span class="fs-3">🖼️</span>
+      <div class="mt-2 mb-1 fw-semibold">Upload PNG image or drag & drop</div>
+      <div class="text-muted small mb-0">Max 5MB &nbsp;|&nbsp; Secure PyTorch Model</div>
+      <input type="file" id="fileInput" accept="image/png" style="display:none;">
+    </div>
+    <div id="preview" style="display:none;" class="text-center mt-3">
+      <img id="previewImg" class="preview-img mb-2" alt="Preview"/>
+      <div id="filename" class="small text-muted mt-1"></div>
+    </div>
+    <button id="analyzeBtn" class="btn btn-primary w-100 mt-3 fw-bold" disabled>Analyze Image</button>
+    <div id="loading" style="display:none;" class="text-center mt-3">
+      <div class="spinner-border text-primary" style="width:2.1rem;height:2.1rem;"></div>
+      <p class="mt-2">Analyzing image...</p>
+    </div>
+    <div id="results" style="display:none;" class="mt-4"></div>
+  </div>
+</div>
+<script>
+let selectedFile = null;
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const preview = document.getElementById('preview');
+const previewImg = document.getElementById('previewImg');
+const filenameDiv = document.getElementById('filename');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const loading = document.getElementById('loading');
+const results = document.getElementById('results');
+const infoPanel = document.getElementById('infoPanel');
+
+dropzone.onclick = () => fileInput.click();
+dropzone.ondragover = (e) => { e.preventDefault(); dropzone.style.background = "#dbeafe"; };
+dropzone.ondragleave = () => dropzone.style.background = "#f5faff";
+dropzone.ondrop = (e) => {
+    e.preventDefault(); dropzone.style.background = "#dbeafe";
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+};
+fileInput.onchange = (e) => { if (e.target.files.length) handleFile(e.target.files[0]); };
+function handleFile(file) {
+    if (!file.name.toLowerCase().endsWith('.png')) { alert('Please select a PNG image.'); return; }
+    selectedFile = file; analyzeBtn.disabled = false;
+    preview.style.display = 'block';
+    filenameDiv.textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    const reader = new FileReader();
+    reader.onload = e => { previewImg.src = e.target.result; }; reader.readAsDataURL(file);
+    results.style.display = 'none';
+}
+analyzeBtn.onclick = async () => {
+    if (!selectedFile) return;
+    loading.style.display = 'block'; results.style.display = 'none'; analyzeBtn.disabled = true;
+    const formData = new FormData(); formData.append('file', selectedFile);
+    try {
+        const resp = await fetch('/predict', { method:'POST', body:formData });
+        const data = await resp.json();
+        if (resp.ok) displayResults(data); else alert(data.error || 'Prediction failed');
+    } catch (e) { alert('Network error: ' + e.message); }
+    loading.style.display = 'none'; analyzeBtn.disabled = false;
+};
+// Collapsible info
+function toggleInfo(){
+    infoPanel.classList.toggle('collapsed');
+    document.querySelector('.info-collapsible').classList.toggle('collapsed');
+}
+// Custom icons for clean/stego
+const CLEAN_EMOJI = '<span class="icon-big icon-clean">🔓</span>';
+const STEGO_EMOJI = '<span class="icon-big icon-stego">🔒</span>';
+function displayResults(data) {
+    let html = '';
+    const b = data.binary_prediction, m = data.multiclass_prediction;
+    html += `<div class="mb-2 text-center">
+        <span class="result-badge" 
+            style="background:${b.class==='clean'?'#14b8a6':'#ef4444'};color:#fff">
+            ${b.class==='clean' ? CLEAN_EMOJI+'CLEAN' : STEGO_EMOJI+'STEGO'}
+        </span>
+        <div class="small mt-1 mb-2" style="color:#34425a;">Binary prediction (Clean vs. Stego)</div>
+        <div class="prob-bar-wrap">
+            <span class="prob-bar-label">CLEAN</span>
+            <div class="prob-bar"><div class="prob-bar-inner" style="width:${(b.probabilities.clean*100).toFixed(1)}%;background:#10b981;"></div></div>
+            <span class="prob-bar-value">${(b.probabilities.clean*100).toFixed(1)}%</span>
+        </div>
+        <div class="prob-bar-wrap">
+            <span class="prob-bar-label">STEGO</span>
+            <div class="prob-bar"><div class="prob-bar-inner" style="width:${(b.probabilities.stego*100).toFixed(1)}%;background:#ef4444;"></div></div>
+            <span class="prob-bar-value">${(b.probabilities.stego*100).toFixed(1)}%</span>
+        </div>
+    </div>`;
+    if (b.class === 'stego') {
+        html += `<div class="mb-2 text-center">
+            <span class="result-badge" style="background:#3b82f6;color:#fff">Payload: ${m.payload_type.toUpperCase()}</span>
+            <div class="small mb-2" style="color:#2a3140;">Multi-class payload classification</div>`;
+        const colors = {html:'#6366f1',js:'#f97316',ps:'#14b8a6',clean:'#06b6d4'};
+        Object.entries(m.probabilities)
+            .sort((a,b)=>b[1]-a[1])
+            .forEach(([k,v]) => {
+                let color = colors[k] || '#818cf8';
+                html += `<div class="prob-bar-wrap">
+                    <span class="prob-bar-label">${k.toUpperCase()}</span>
+                    <div class="prob-bar">
+                        <div class="prob-bar-inner" style="width:${(v*100).toFixed(1)}%;background:${color};"></div>
+                    </div>
+                    <span class="prob-bar-value">${(v*100).toFixed(1)}%</span>
+                </div>`;
+            });
+        html += `</div>`;
+    }
+    results.innerHTML = html; results.style.display = 'block';
+}
+</script>
+</body>
+</html>
