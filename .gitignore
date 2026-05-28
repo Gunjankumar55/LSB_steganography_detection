@@ -8,6 +8,8 @@ venv/
 # Model artifacts are downloaded, not committed
 models/*.pth
 models/*.pkl
+models/*.part
+models/.*.part
 
 # Tooling
 .pytest_cache/

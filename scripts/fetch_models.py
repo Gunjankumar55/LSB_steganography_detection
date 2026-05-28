@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -35,6 +36,7 @@ ARTIFACTS: dict[str, str] = {
 }
 
 _CHUNK = 1 << 20
+_ATTEMPTS = 4
 
 
 def sha256(path: Path) -> str:
@@ -43,6 +45,31 @@ def sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(_CHUNK), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _stream(url: str, handle) -> None:
+    """Copy ``url`` into ``handle``, retrying transient failures."""
+    for attempt in range(1, _ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response:
+                while chunk := response.read(_CHUNK):
+                    handle.write(chunk)
+            return
+        except urllib.error.HTTPError as error:
+            handle.seek(0)
+            handle.truncate()
+            if 400 <= error.code < 500:
+                raise
+            if attempt == _ATTEMPTS:
+                raise
+            print(f"  retry    HTTP {error.code}, attempt {attempt}")
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            handle.seek(0)
+            handle.truncate()
+            if attempt == _ATTEMPTS:
+                raise
+            print(f"  retry    {error}, attempt {attempt}")
+        time.sleep(2 * attempt)
 
 
 def download(name: str, expected: str, target_dir: Path, force: bool) -> None:
@@ -62,10 +89,8 @@ def download(name: str, expected: str, target_dir: Path, force: bool) -> None:
     ) as handle:
         temporary = Path(handle.name)
         try:
-            with urllib.request.urlopen(url, timeout=60) as response:
-                while chunk := response.read(_CHUNK):
-                    handle.write(chunk)
-        except (urllib.error.URLError, urllib.error.HTTPError) as error:
+            _stream(url, handle)
+        except (urllib.error.URLError, urllib.error.HTTPError, OSError) as error:
             handle.close()
             temporary.unlink(missing_ok=True)
             raise SystemExit(f"Failed to download {name} from {url}: {error}") from error
