@@ -82,8 +82,9 @@ Binary result: 9/16 correct.
   the model does respond to the embedding signal. The decision boundary sits
   too far toward "stego" for these inputs.
 - Payload typing is not reliable. On stego rows it predicted `clean` in 9 of 12
-  photographic cases and `js` for every synthetic case where the payload was
-  HTML or PowerShell.
+  photographic cases. On synthetic images it never predicted `html` at all:
+  HTML and PowerShell payloads came back as `js`, `ps`, or `clean` depending on
+  the image.
 - Changing the resize filter does not explain the bias. Lanczos, bilinear,
   bicubic, nearest, box, and hamming all produced clean-image stego
   probabilities within 0.05 of each other.
