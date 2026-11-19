@@ -1,6 +1,10 @@
-flask
-torch
-numpy
-scipy
-pillow
-scikit-learn
+# Runtime dependencies pinned to the versions this project was verified with.
+#
+# scikit-learn 1.7.2 is the version that serialised the published artifacts and
+# requires Python 3.10 or newer. See README for the CPU-only PyTorch install.
+flask==2.3.3
+numpy==1.26.4
+scipy==1.13.1
+pillow==10.4.0
+scikit-learn==1.7.2
+torch==2.8.0
